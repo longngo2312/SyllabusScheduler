@@ -1,4 +1,4 @@
-import Auth from "/src/pages/AuthenticationPage.jsx"
+import Auth from "./pages/AuthenticationPage.jsx"
 
 export default function App(){
     return (

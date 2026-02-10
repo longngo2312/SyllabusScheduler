@@ -1,4 +1,4 @@
-import {LaserFlow} from "@/components/LaserFlow"
+import {LaserFlow} from "../components/LaserFlow"
 export default function FrontPage(){
   return(
     <>
@@ -102,7 +102,7 @@ export default function FrontPage(){
               {/* Footer */}
               <p className="text-center text-sm text-white/50 mt-6">
                 Don’t have an account?{" "}
-                <span className="text-white font-medium cursor-pointer">
+                <span className="text-white font-medium cursor-pointer text-decoration: underline">
                   Sign Up
                 </span>
               </p>
