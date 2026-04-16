@@ -1,10 +1,13 @@
-import {LaserFlow} from "../components/LaserFlow"
-export default function FrontPage(){
-  return(
+import { LogIn } from "lucide-react"
+import { LaserFlow } from "../components/LaserFlow"
+import { useState } from "react"
+export default function FrontPage() {
+  const [isLogin, logIn] = useState(true)
+  return (
     <>
       <div className="relative w-screen h-screen overflow-hidden bg-black">
         {/* Background LaserFlow */}
-        <div className="w-1080px h-1080px position: relative">
+        <div className="w-full h-full relative">
           <LaserFlow
             color="#ffffff"
             wispDensity={1.3}
@@ -18,11 +21,12 @@ export default function FrontPage(){
             flowStrength={0.25}
             decay={1.1}
             horizontalBeamOffset={0}
-            verticalBeamOffset={-0.4}
-          />       
+            verticalBeamOffset={-0.49}
+          />
         </div>
         {/* Foreground UI */}
         <div className="absolute inset-0 z-10 flex items-center justify-center">
+          {isLogin ? (
             <div className="w-100 rounded-3xl border border-white/10 
                             bg-linear-to-b from-neutral-900/90 to-black/90
                             shadow-[0_0_40px_rgba(0,0,0,0.8)]
@@ -102,12 +106,35 @@ export default function FrontPage(){
               {/* Footer */}
               <p className="text-center text-sm text-white/50 mt-6">
                 Don’t have an account?{" "}
-                <span className="text-white font-medium cursor-pointer text-decoration: underline">
+                <span
+                  className="text-white font-medium cursor-pointer text-decoration: underline"
+                  onClick={() => logIn(false)}>
                   Sign Up
                 </span>
               </p>
             </div>
-          </div>
+          ) : (
+            <div className="w-100 rounded-3xl border border-white/10 
+                            bg-linear-to-b from-neutral-900/90 to-black/90
+                            shadow-[0_0_40px_rgba(0,0,0,0.8)]
+                            backdrop-blur-xl p-8
+                            opacity-95">
+              <h1 className="text-3xl font-semibold text-white text-center mb-2">Create Account</h1>
+              <p className="text-sm text-white/60 text-center mb-8">Start your academic command center</p>
+
+              {/* Email container */}
+              <label className="text-sm text-white/80 mb-2 block">Username</label>
+              <input className="w-full rounded-xl border border-white/10
+                              bg-white/5 px-4 py-3"type="username" placeholder="John Doe"></input>
+              <label className="text-sm text-white/80 mb-2 block">Email Address</label>
+              <input className="w-full rounded-xl border border-white/10
+                              bg-white/5 px-4 py-3"type="email" placeholder="yourEmail@gmail.com"></input>
+              <label className="text-sm text-white/80 mb-2 block">Password</label>
+              <input className="w-full rounded-xl border border-white/10
+                              bg-white/5 px-4 py-3"type="password" placeholder="••••••••"></input>
+            </div>
+          )}
+        </div>
       </div>
     </>
   )
