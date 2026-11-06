@@ -6,8 +6,6 @@ declare const TechText: FC<{
   letterSpacing?: number;
   align?: "left" | "center" | "right";
   accentColor?: string;
-  sweepIndex?: number;
-  sweepCount?: number;
   className?: string;
   style?: CSSProperties;
 }>;

@@ -5,9 +5,6 @@ import TechText from "@/components/TechText";
 import { Effect } from "@animate-ui/react/primitives/effects/effect";
 import { Outlet } from "react-router";
 
-// TechText draws a single line, so the headline is split by hand.
-const HEADLINE = ["Every syllabus, every", "deadline, one calendar."];
-
 const STEPS = [
   ["01 Upload", "Drop a syllabus PDF"],
   ["02 Review", "Confirm extracted data"],
@@ -41,28 +38,22 @@ function Auth() {
         </div>
         <div className="flex max-w-[560px] flex-col gap-5">
           <h1>
-            {HEADLINE.map((line, i) => (
-              <TechText
-                key={line}
-                text={line}
-                fontSize={64}
-                letterSpacing={-0.02}
-                align="left"
-                accentColor="#5980a6"
-                sweepIndex={i}
-                sweepCount={HEADLINE.length}
-                // Cancels TechText's 5% inset; the ratio lets the text scale with the column.
-                // No pointer events: the sweep is the only effect, hover and drag stay off.
-                style={{
-                  pointerEvents: "none",
-                  width: "111.11%",
-                  height: "auto",
-                  aspectRatio: "7 / 1",
-                  marginLeft: "-5.56%",
-                  marginTop: i ? "-4.5%" : undefined,
-                }}
-              />
-            ))}
+            <TechText
+              text={"Every syllabus, every\ndeadline, one system."}
+              fontSize={64}
+              letterSpacing={-0.02}
+              align="left"
+              accentColor="#5980a6"
+              // Cancels TechText's 5% inset; the ratio lets the text scale with the column.
+              // No pointer events: the sweep is the only effect, hover and drag stay off.
+              style={{
+                pointerEvents: "none",
+                width: "111.11%",
+                height: "auto",
+                aspectRatio: "4.2 / 1",
+                marginLeft: "-5.56%",
+              }}
+            />
           </h1>
           <Effect fade slide={{ offset: 16 }} blur={{ initialBlur: 2 }}>
             <p className="max-w-[480px] text-[17px] leading-normal text-muted-foreground">

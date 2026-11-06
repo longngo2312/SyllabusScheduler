@@ -11,6 +11,7 @@ const INHERIT = /^(currentcolor|inherit)$/i;
 const INTRO_DELAY = 0.15;
 const KICK_DECAY = 0.62;
 const SWEEP_SECONDS_PER_LINE = 6;
+const BLOCK_HEIGHT_FIT = 0.85;
 
 const approach = (current, target, dt, seconds) => current + (target - current) * (1 - Math.exp(-dt / seconds));
 
@@ -56,8 +57,7 @@ const TechText = ({
   draggable = true,
   bounce = 0.4,
   sweep = true,
-  sweepIndex = 0,
-  sweepCount = 1,
+  lineHeight = 1,
   speed = 1,
   clickKick = true,
   intro = 'none',
@@ -94,8 +94,7 @@ const TechText = ({
       draggable,
       bounce,
       sweep,
-      sweepIndex,
-      sweepCount,
+      lineHeight,
       speed,
       clickKick,
       intro,
@@ -187,15 +186,15 @@ const TechText = ({
         c.lineCap = 'butt';
         c.strokeStyle = ink;
         if (s.lineStyle !== 'solid') c.setLineDash([Math.max(1, s.dashLength), Math.max(1, s.dashGap)]);
-        c.strokeText(glyph.char, glyph.x, view.baseline);
+        c.strokeText(glyph.char, glyph.x, glyph.baseline);
         c.setLineDash([]);
         c.globalCompositeOperation = 'destination-out';
         c.fillStyle = '#000000';
-        c.fillText(glyph.char, glyph.x, view.baseline);
+        c.fillText(glyph.char, glyph.x, glyph.baseline);
         c.globalCompositeOperation = 'source-over';
       } else {
         c.fillStyle = ink;
-        c.fillText(glyph.char, glyph.x, view.baseline);
+        c.fillText(glyph.char, glyph.x, glyph.baseline);
       }
       return { image, left, top };
     };
@@ -206,6 +205,7 @@ const TechText = ({
         family(s),
         s.fontWeight,
         s.fontSize,
+        s.lineHeight,
         s.letterSpacing,
         s.align,
         ink,
@@ -227,35 +227,54 @@ const TechText = ({
 
       const probe = scratchCtx;
       setFont(probe, s, s.fontSize);
-      let m = probe.measureText(s.text);
+      // Multi-line (upstream is single-line): text splits on "\n" and every line shares one canvas.
+      const texts = s.text.split('\n');
+      const inkWidthOf = metrics => metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight;
+      const blockHeight = (all, fontPx) =>
+        fontPx * s.lineHeight * (all.length - 1) +
+        all[0].actualBoundingBoxAscent +
+        all[all.length - 1].actualBoundingBoxDescent;
+      let ms = texts.map(line => probe.measureText(line));
       const fit = Math.min(
         1,
-        (width * 0.9) / Math.max(m.actualBoundingBoxLeft + m.actualBoundingBoxRight, 1),
-        (height * 0.66) / Math.max(m.actualBoundingBoxAscent + m.actualBoundingBoxDescent, 1)
+        (width * 0.9) / Math.max(...ms.map(inkWidthOf), 1),
+        (height * BLOCK_HEIGHT_FIT) / Math.max(blockHeight(ms, s.fontSize), 1)
       );
       const size = s.fontSize * fit;
       setFont(probe, s, size);
-      m = probe.measureText(s.text);
-      const inkWidth = m.actualBoundingBoxLeft + m.actualBoundingBoxRight;
-      const inkHeight = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent;
+      ms = texts.map(line => probe.measureText(line));
       const margin = width * 0.05;
-      const start =
-        s.align === 'left' ? margin : s.align === 'right' ? width - margin - inkWidth : (width - inkWidth) / 2;
-      const x = start + m.actualBoundingBoxLeft;
-      const baseline = (height - inkHeight) / 2 + m.actualBoundingBoxAscent;
+      const baseline = (height - blockHeight(ms, size)) / 2 + ms[0].actualBoundingBoxAscent;
+      const rows = texts.map((text, r) => {
+        const metrics = ms[r];
+        const inkWidth = inkWidthOf(metrics);
+        const start =
+          s.align === 'left' ? margin : s.align === 'right' ? width - margin - inkWidth : (width - inkWidth) / 2;
+        const x = start + metrics.actualBoundingBoxLeft;
+        return {
+          text,
+          x,
+          baseline: baseline + r * size * s.lineHeight,
+          left: x - metrics.actualBoundingBoxLeft,
+          right: x + metrics.actualBoundingBoxRight
+        };
+      });
+      const lastRow = rows[rows.length - 1];
+      // ponytail: guides and the metrics intro only measure the first line; neither is used here.
       const xHeight = baseline - probe.measureText('x').actualBoundingBoxAscent;
       const capHeight = baseline - probe.measureText('H').actualBoundingBoxAscent;
       const ascender = baseline - probe.measureText('d').actualBoundingBoxAscent;
       const descender = baseline + probe.measureText('p').actualBoundingBoxDescent;
-      const top = baseline - m.actualBoundingBoxAscent;
-      const bottom = baseline + m.actualBoundingBoxDescent;
+      const top = baseline - ms[0].actualBoundingBoxAscent;
+      const bottom = lastRow.baseline + ms[ms.length - 1].actualBoundingBoxDescent;
       const inkTop = Math.min(top, capHeight) - 2;
-      const inkBottom = Math.max(bottom, baseline) + 2;
+      const inkBottom = baseline + ms[0].actualBoundingBoxDescent + 2;
       const next = {
         size,
         baseline,
-        left: x - m.actualBoundingBoxLeft,
-        right: x + m.actualBoundingBoxRight,
+        rows,
+        left: Math.min(...rows.map(row => row.left)),
+        right: Math.max(...rows.map(row => row.right)),
         top,
         bottom,
         lines: [
@@ -275,38 +294,43 @@ const TechText = ({
       word = next;
 
       // Each "glyph" is a whole word (upstream splits per letter). Spaces are kept for measuring, then skipped.
-      const chars = s.text.split(/(\s+)/).filter(Boolean);
       const previous = glyphs;
       glyphs = [];
-      let prefix = '';
-      chars.forEach((char, i) => {
-        prefix += char;
-        const own = probe.measureText(char);
-        const gx = x + probe.measureText(prefix).width - own.width;
-        if (!char.trim()) return;
-        const base = {
-          char,
-          x: gx,
-          box: {
-            x1: gx - own.actualBoundingBoxLeft,
-            y1: baseline - own.actualBoundingBoxAscent,
-            x2: gx + own.actualBoundingBoxRight,
-            y2: baseline + own.actualBoundingBoxDescent
-          }
-        };
-        const kept = previous[glyphs.length];
-        glyphs.push({
-          ...base,
-          offset: kept?.char === char ? kept.offset : { x: 0, y: 0 },
-          velocity: { x: 0, y: 0 },
-          outline: 0,
-          shown: 1,
-          cells: null,
-          assembled: 0,
-          index: i,
-          fill: sprite(s, next, base, false, ink),
-          dashes: sprite(s, next, base, true, ink)
-        });
+      rows.forEach(row => {
+        let prefix = '';
+        row.text
+          .split(/(\s+)/)
+          .filter(Boolean)
+          .forEach(char => {
+            prefix += char;
+            const own = probe.measureText(char);
+            const gx = row.x + probe.measureText(prefix).width - own.width;
+            if (!char.trim()) return;
+            const base = {
+              char,
+              x: gx,
+              baseline: row.baseline,
+              box: {
+                x1: gx - own.actualBoundingBoxLeft,
+                y1: row.baseline - own.actualBoundingBoxAscent,
+                x2: gx + own.actualBoundingBoxRight,
+                y2: row.baseline + own.actualBoundingBoxDescent
+              }
+            };
+            const kept = previous[glyphs.length];
+            glyphs.push({
+              ...base,
+              offset: kept?.char === char ? kept.offset : { x: 0, y: 0 },
+              velocity: { x: 0, y: 0 },
+              outline: 0,
+              shown: 1,
+              cells: null,
+              assembled: 0,
+              index: glyphs.length,
+              fill: sprite(s, next, base, false, ink),
+              dashes: sprite(s, next, base, true, ink)
+            });
+          });
       });
       dragging = -1;
       frame.index = -1;
@@ -320,7 +344,9 @@ const TechText = ({
       glyphs.forEach((glyph, i) => {
         const x1 = glyph.box.x1 + glyph.offset.x;
         const x2 = glyph.box.x2 + glyph.offset.x;
-        const d = x < x1 ? x1 - x : x > x2 ? x - x2 : 0;
+        const y1 = glyph.box.y1 + glyph.offset.y;
+        const y2 = glyph.box.y2 + glyph.offset.y;
+        const d = Math.hypot(x < x1 ? x1 - x : x > x2 ? x - x2 : 0, y < y1 ? y1 - y : y > y2 ? y - y2 : 0);
         if (d < bestDistance) {
           bestDistance = d;
           best = i;
@@ -702,16 +728,16 @@ const TechText = ({
       const progress = introOn ? clamp01((introClock - INTRO_DELAY) / Math.max(0.3, s.introDuration)) : 1;
       introducing = introOn && progress < 1;
 
-      // Instances with the same sweepCount share this clock, so one sweep reads across all their lines in turn.
-      const sweepOn = !introducing && s.sweep && !reducedMotion && !pointer.inside && dragging < 0;
-      const phase = ((now / 1000) * s.speed) / SWEEP_SECONDS_PER_LINE % s.sweepCount;
-      const sweeping = sweepOn && Math.floor(phase) === s.sweepIndex;
+      const sweeping = !introducing && s.sweep && !reducedMotion && !pointer.inside && dragging < 0;
       pulse += dt;
       let targetX = pointer.x;
       let targetY = pointer.y;
       if (sweeping) {
-        targetX = view.left + (view.right - view.left) * (phase - s.sweepIndex);
-        targetY = view.top + (view.bottom - view.top) * 0.5;
+        // One box reads left to right along each line, then moves down to the next and loops.
+        const phase = (((now / 1000) * s.speed) / SWEEP_SECONDS_PER_LINE) % view.rows.length;
+        const row = view.rows[Math.floor(phase)];
+        targetX = row.left + (row.right - row.left) * (phase % 1);
+        targetY = row.baseline - view.size * 0.35;
       }
       const active = !introducing && (pointer.inside || sweeping || dragging >= 0);
       if (active && !placed) {
@@ -873,7 +899,7 @@ const TechText = ({
         (guideAlpha > 0.005 && guideAlpha < 0.995) ||
         Math.abs(presence - (s.reveal === 'area' && active && dragging < 0 ? 1 : 0)) > 0.002 ||
         (frame.alpha > 0.01 && frame.alpha < 0.99);
-      if ((active || settling || sweepOn) && visible && alive) raf = requestAnimationFrame(tick);
+      if ((active || settling) && visible && alive) raf = requestAnimationFrame(tick);
     };
 
     const wake = () => {
