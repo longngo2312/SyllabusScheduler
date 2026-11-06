@@ -8,11 +8,18 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
+import React, { useState } from "react";
+import { Link } from "react-router";
 const LINK = "text-steel-700 hover:text-steel-900 underline-offset-[3px]";
 const FIELD_LABEL = "text-xs font-normal text-foreground/70";
 
 function LoginForm() {
+  const [username, setUsername] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    return;
+  };
   return (
     <Card className="relative w-full max-w-[400px] gap-[18px] overflow-visible border py-7 shadow-md ring-0 [--card-spacing:--spacing(5)] sm:py-9 sm:[--card-spacing:--spacing(8)]">
       <Corners />
@@ -22,21 +29,22 @@ function LoginForm() {
       </CardHeader>
       <CardContent className="flex flex-col gap-[18px]">
         {/* ponytail: UI only, submit does nothing until the backend has /api/login */}
-        <form
-          className="flex flex-col gap-[18px]"
-          onSubmit={(e) => e.preventDefault()}
-        >
+        <form className="flex flex-col gap-[18px]" onSubmit={handleSubmit}>
           <div className="flex flex-col gap-[5px]">
-            <Label className={FIELD_LABEL} htmlFor="login-email">
-              Email Address
+            <Label className={FIELD_LABEL} htmlFor="login-username">
+              Username
             </Label>
             <Input
               className="h-9 bg-secondary"
-              id="login-email"
-              type="email"
-              name="email"
-              placeholder="you@university.edu"
-              autoComplete="email"
+              id="login-username"
+              type="username"
+              name="username"
+              placeholder="JohnDoe123"
+              autoComplete="username"
+              value={username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+              }}
               required
             />
           </div>
@@ -55,6 +63,10 @@ function LoginForm() {
               type="password"
               name="password"
               autoComplete="current-password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+              }}
               required
             />
           </div>
@@ -76,9 +88,9 @@ function LoginForm() {
         </div>
         <div className="text-center text-sm text-muted-foreground">
           Don’t have an account?{" "}
-          <a className={`${LINK} font-medium underline`} href="/signup">
+          <Link className={`${LINK} font-medium underline`} to="/signup">
             Sign Up
-          </a>
+          </Link>
         </div>
       </CardContent>
     </Card>

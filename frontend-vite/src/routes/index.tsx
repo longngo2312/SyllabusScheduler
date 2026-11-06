@@ -1,16 +1,27 @@
+import LoginForm from "@/components/auth/LoginForm";
+import RegisterForm from "@/components/auth/RegisterForm";
+import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
-import Login from "@/pages/Login";
-import Signup from "@/pages/Signup";
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 
 export const router = createBrowserRouter([
   {
-    path: "/login",
-    Component: Login,
-  },
-  {
-    path: "/signup",
-    Component: Signup,
+    path: "/",
+    Component: Auth,
+    children: [
+      {
+        index: true,
+        element: <Navigate to="/login" replace />,
+      },
+      {
+        path: "login",
+        Component: LoginForm,
+      },
+      {
+        path: "signup",
+        Component: RegisterForm,
+      },
+    ],
   },
   {
     path: "/dashboard",

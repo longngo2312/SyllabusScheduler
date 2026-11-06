@@ -1,5 +1,6 @@
 import LoginForm from "@/components/auth/LoginForm";
 import Corners from "@/components/Corners";
+import { Effect } from "@animate-ui/react/primitives/effects/effect";
 
 const STEPS = [
   ["01 Upload", "Drop a syllabus PDF"],
@@ -18,34 +19,47 @@ function Login() {
           </span>
         </div>
         <div className="flex max-w-[560px] flex-col gap-5">
-          <div className="text-[11px] tracking-[0.12em] text-steel-700 uppercase">
-            CSCE 3420 · Team 6
-          </div>
           <h1 className="text-[clamp(44px,5vw,64px)] leading-none tracking-[-0.02em] text-pretty">
             Every syllabus, every deadline, one calendar.
           </h1>
-          <p className="max-w-[480px] text-[17px] leading-normal text-muted-foreground">
-            Upload your course PDFs and sync Canvas. Dates, grading weights and
-            policies are pulled out for you to review.
-          </p>
+          <Effect fade slide={{ offset: 16 }} blur={{ initialBlur: 2 }}>
+            <p className="max-w-[480px] text-[17px] leading-normal text-muted-foreground">
+              Upload your course PDFs and sync Canvas. Dates, grading weights
+              and policies are pulled out for you to review.
+            </p>
+          </Effect>
         </div>
-        <ol className="grid max-w-[620px] gap-5 sm:grid-cols-3">
-          {STEPS.map(([title, text]) => (
-            <li
-              className="relative border bg-background px-4 py-3.5"
-              key={title}
-            >
-              <Corners />
-              <div className="font-heading text-[17px] font-semibold">
-                {title}
-              </div>
-              <div className="text-[13px] text-muted-foreground">{text}</div>
-            </li>
-          ))}
-        </ol>
+        <Effect
+          fade
+          slide={{ offset: 16 }}
+          blur={{ initialBlur: 4 }}
+          delay={100}
+        >
+          <ol className="grid max-w-[620px] gap-5 sm:grid-cols-3">
+            {STEPS.map(([title, text]) => (
+              <li
+                className="relative border bg-background px-4 py-3.5"
+                key={title}
+              >
+                <Corners />
+                <div className="font-heading text-[17px] font-semibold">
+                  {title}
+                </div>
+                <div className="text-[13px] text-muted-foreground">{text}</div>
+              </li>
+            ))}
+          </ol>
+        </Effect>
       </div>
       <main className="flex items-center justify-center border-t bg-background px-4 py-10 sm:px-6 lg:border-t-0 lg:border-l lg:p-12">
-        <LoginForm />
+        <Effect
+          className="flex w-full justify-center"
+          fade
+          slide={{ offset: 16 }}
+          blur={{ initialBlur: 4 }}
+        >
+          <LoginForm />
+        </Effect>
       </main>
     </div>
   );

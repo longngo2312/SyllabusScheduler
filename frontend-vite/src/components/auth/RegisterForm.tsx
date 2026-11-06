@@ -9,11 +9,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import React, { useState } from "react";
+import { Link } from "react-router";
 const LINK = "text-steel-700 hover:text-steel-900 underline-offset-[3px]";
 const FIELD_LABEL = "text-xs font-normal text-foreground/70";
 function RegisterForm() {
-  const [password, setPassword] = useState<string>();
-  const [confirmPassword, setConfirmPassword] = useState<string>();
+  const [password, setPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -110,9 +111,9 @@ function RegisterForm() {
         </div>
         <div className="text-center text-sm text-muted-foreground">
           Have an account?{" "}
-          <a className={`${LINK} font-medium underline`} href="/login">
+          <Link className={`${LINK} font-medium underline`} to="/login">
             Log in
-          </a>
+          </Link>
         </div>
       </CardContent>
     </Card>
