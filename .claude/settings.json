@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Read(//c/Users/Crack/.claude/skills/animate-ui/references/**)",
-      "Read(//c/Users/Crack/.agents/skills/animate-ui/references/**)"
-    ]
-  }
-}
