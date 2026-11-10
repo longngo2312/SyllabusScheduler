@@ -1,3 +1,4 @@
+import ForgetPasswordForm from "@/components/auth/ForgetPasswordForm";
 import LoginForm from "@/components/auth/LoginForm";
 import RegisterForm from "@/components/auth/RegisterForm";
 import Auth from "@/pages/Auth";
@@ -20,6 +21,10 @@ export const router = createBrowserRouter([
       {
         path: "signup",
         Component: RegisterForm,
+      },
+      {
+        path: "forgot-password",
+        Component: ForgetPasswordForm,
       },
     ],
   },

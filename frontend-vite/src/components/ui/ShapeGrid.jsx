@@ -14,6 +14,17 @@ const DIRECTIONS = {
   none: [0, 0]
 };
 const SQRT3 = Math.sqrt(3);
+// Calendar mode (square only): rows are weeks, each cell is a day, some days carry a mark.
+const MARKS = [
+  { label: 'Exam', color: '#c4566b' },
+  { label: 'Assignment', color: '#597ea3' },
+  { label: 'Quiz', color: '#c48a2c' },
+  { label: 'Project', color: '#4f9a78' },
+  { label: 'Reading', color: '#7a7a7d' }
+];
+const MARK_DENSITY = 0.22;
+const DAY_COLOR = '#416180';
+const WEEKEND_COLOR = '#c9a27a';
 const OFFSET = 32768;
 const FAR = 2.5;
 const MAX_PIXELS = 8e6;
@@ -86,6 +97,28 @@ const project = (m, x, y) => {
   const w = m[6] * x + m[7] * y + m[8];
   return [(m[0] * x + m[1] * y + m[2]) / w, (m[3] * x + m[4] * y + m[5]) / w];
 };
+
+// Maps the unit square onto a screen quad (corners clockwise from top-left), so pointer
+// hits stay correct when a parent applies a CSS 3D transform (perspective, rotateY...).
+const squareToQuad = ([[x0, y0], [x1, y1], [x2, y2], [x3, y3]]) => {
+  const dx1 = x1 - x2;
+  const dx2 = x3 - x2;
+  const dx3 = x0 - x1 + x2 - x3;
+  const dy1 = y1 - y2;
+  const dy2 = y3 - y2;
+  const dy3 = y0 - y1 + y2 - y3;
+  const det = dx1 * dy2 - dx2 * dy1;
+  const g = (dx3 * dy2 - dx2 * dy3) / det;
+  const h = (dx1 * dy3 - dx3 * dy1) / det;
+  return [x1 - x0 + g * x1, x3 - x0 + h * x3, x0, y1 - y0 + g * y1, y3 - y0 + h * y3, y0, g, h, 1];
+};
+
+const CORNERS = [
+  { top: 0, left: 0 },
+  { top: 0, left: '100%' },
+  { top: '100%', left: '100%' },
+  { top: '100%', left: 0 }
+];
 
 const flatView = (width, height) => ({
   x0: 0,
@@ -272,6 +305,7 @@ export default function ShapeGrid({
   fade = 1,
   clickCascade = true,
   intro = true,
+  calendar = false,
   opacity = 1,
   backgroundColor = 'transparent',
   paused = false,
@@ -304,6 +338,7 @@ export default function ShapeGrid({
     twinkle: clamp(twinkle, 0, 1),
     clickCascade,
     intro,
+    calendar,
     paused,
     dpr
   };
@@ -507,6 +542,36 @@ export default function ShapeGrid({
       if (s.shape === 'dot') ctx.fill();
       else ctx.stroke();
 
+      if (s.calendar && s.shape === 'square') {
+        const pad = size * 0.09;
+        const markHeight = size * 0.22;
+        ctx.textBaseline = 'middle';
+        for (let i = i0; i <= i1; i++) {
+          for (let j = j0; j <= j1; j++) {
+            const x = i * layout.stepX - state.offsetX;
+            const y = j * layout.stepY - state.offsetY;
+            ctx.globalAlpha = 1;
+            ctx.font = `500 ${size * 0.13}px Barlow, system-ui, sans-serif`;
+            ctx.fillStyle = ((i % 7) + 7) % 7 >= 5 ? WEEKEND_COLOR : DAY_COLOR;
+            ctx.fillText(String((((j * 7 + i) % 30) + 30) % 30 + 1), x + pad, y + pad + size * 0.06);
+            if (hash(i, j) >= MARK_DENSITY) continue;
+            const mark = MARKS[Math.floor(hash(j + 7, i - 3) * MARKS.length)];
+            const my = y + size * 0.5;
+            ctx.fillStyle = mark.color;
+            ctx.globalAlpha = 0.12;
+            ctx.beginPath();
+            ctx.roundRect(x + pad, my, size - pad * 2, markHeight, 2);
+            ctx.fill();
+            ctx.globalAlpha = 0.7;
+            ctx.fillRect(x + pad, my, 2, markHeight);
+            ctx.globalAlpha = 0.65;
+            ctx.font = `600 ${size * 0.115}px Barlow, system-ui, sans-serif`;
+            ctx.fillText(mark.label, x + pad + 6, my + markHeight / 2);
+          }
+        }
+        ctx.globalAlpha = 1;
+      }
+
       if (introRadius !== Infinity) {
         const gradient = ctx.createRadialGradient(originX, originY, 0, originX, originY, Math.max(1, introRadius));
         gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
@@ -652,12 +717,15 @@ export default function ShapeGrid({
       if (!state.raf && state.alive && state.visible) state.raf = requestAnimationFrame(frame);
     };
 
+    const corners = [...container.querySelectorAll('.shape-grid-corner')];
     const pointFrom = event => {
-      const rect = container.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      if (x < 0 || y < 0 || x > rect.width || y > rect.height) return null;
-      return toPlane(x, y);
+      const quad = corners.map(corner => {
+        const rect = corner.getBoundingClientRect();
+        return [rect.left, rect.top];
+      });
+      const [u, v] = project(invert(squareToQuad(quad)), event.clientX, event.clientY);
+      if (!(u >= 0 && v >= 0 && u <= 1 && v <= 1)) return null;
+      return toPlane(u * container.clientWidth, v * container.clientHeight);
     };
 
     const onMove = event => {
@@ -759,6 +827,9 @@ export default function ShapeGrid({
       }}
     >
       <canvas ref={canvasRef} className="shape-grid-canvas" />
+      {CORNERS.map((position, k) => (
+        <span key={k} className="shape-grid-corner" style={{ position: 'absolute', ...position }} />
+      ))}
     </div>
   );
 }

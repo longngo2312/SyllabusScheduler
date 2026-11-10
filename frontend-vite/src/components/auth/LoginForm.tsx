@@ -1,4 +1,4 @@
-import Corners from "@/components/Corners";
+import Corners from "@/components/ui/Corners";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -53,15 +53,16 @@ function LoginForm() {
               <Label className={FIELD_LABEL} htmlFor="login-password">
                 Password
               </Label>
-              <a className={`${LINK} text-xs`} href="#">
+              <Link className={`${LINK} text-xs`} to="/forgot-password">
                 Forgot password?
-              </a>
+              </Link>
             </div>
             <Input
               className="h-9 bg-secondary"
               id="login-password"
               type="password"
               name="password"
+              placeholder="••••••"
               autoComplete="current-password"
               value={password}
               onChange={(e) => {

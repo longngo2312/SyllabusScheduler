@@ -1,4 +1,4 @@
-import Corners from "@/components/Corners";
+import Corners from "@/components/ui/Corners";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,7 +28,7 @@ function RegisterForm() {
     <Card className="relative w-full max-w-[400px] gap-[18px] overflow-visible border py-7 shadow-md ring-0 [--card-spacing:--spacing(5)] sm:py-9 sm:[--card-spacing:--spacing(8)]">
       <Corners />
       <CardHeader>
-        <h2 className="text-[34px]">Hello</h2>
+        <h2 className="text-[34px]">Signup</h2>
         <CardDescription>Create your semester brain</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-[18px]">
@@ -72,6 +72,7 @@ function RegisterForm() {
               id="password"
               type="password"
               name="password"
+              placeholder="••••••"
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -87,6 +88,7 @@ function RegisterForm() {
               id="confirm-password"
               type="password"
               name="confirmPassword"
+              placeholder="••••••"
               autoComplete="new-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
